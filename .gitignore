@@ -9,4 +9,5 @@
 *.lib
 
 # build
-build/
+build/*
+!Makefile
