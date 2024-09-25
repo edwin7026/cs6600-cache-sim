@@ -1,0 +1,18 @@
+#pragma once
+
+#include <string>
+
+/**
+ * @details base class for all classes
+ */
+class base
+{
+    protected:
+        std::string name;
+    public:
+        base(const std::string& name) : name(name) {}
+
+        const std::string& get_name(){
+            return name;
+        }
+};
