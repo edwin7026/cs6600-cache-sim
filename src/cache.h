@@ -4,7 +4,8 @@
  * @author Edwin Joy edwin7026@gmail.com
  **/
 
-#pragma once
+#ifndef CACHE_H
+#define CACHE_H
 
 #include <vector>
 #include <cstdio>
@@ -70,7 +71,6 @@ class cache : public module
             const repl_policy_enum& repl_policy = repl_policy_enum::LRU
         );
 
-        
         /**
          * @details This function makes the connection with other modules
          */
@@ -127,3 +127,5 @@ class cache : public module
          */
         ~cache();
 };
+
+#endif // CACHE_H

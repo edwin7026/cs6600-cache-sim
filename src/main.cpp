@@ -1,8 +1,9 @@
 #include <iostream>
 
+#include <cpu.h>
 #include <cache.h>
-
-#include "utils.h"
+#include <main_memory.h>
+#include <common.h>
 
 int main(int argc, char* argv[]) 
 {
@@ -36,6 +37,19 @@ int main(int argc, char* argv[])
         repl_policy_enum::LRU);
 
     l1_cache.mk_next_connection(&l2_cache);
+    
+    // cpu test
+    cpu CPU(
+        "./trace.txt",
+        log
+    );
+
+    // memory test
+    main_memory main_mem(log);
+
+    CPU.mk_next_connection(&main_mem);
+
+    CPU.sequencer();
 
     return 0;
 }

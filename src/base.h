@@ -2,6 +2,9 @@
 
 #include <string>
 
+#ifndef BASE_H
+#define BASE_H
+
 /**
  * @details base class for all classes
  */
@@ -16,3 +19,5 @@ class base
             return name;
         }
 };
+
+#endif // BASE_H
