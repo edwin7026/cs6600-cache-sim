@@ -10,8 +10,9 @@
 #include <vector>
 #include <cstdio>
 #include <string>
+#include <cmath>
 
-#include "module.h"
+#include <module.h>
 
 struct cache_line_states
 {
@@ -96,7 +97,7 @@ class cache : public module
         /**
          * @details This function accepts requests from the next higher level in the hierarchy
          */
-        void get_prev();
+        void get_frm_prev();
 
         // cache operations
         

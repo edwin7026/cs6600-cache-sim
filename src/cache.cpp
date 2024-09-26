@@ -43,6 +43,36 @@ cache::cache(const std::string& name, const unsigned& size, const unsigned& asso
 
 // generic interface functions
 
+void cache::get_frm_prev()
+{
+    if (ifc_prev != nullptr)
+    {
+        log.log(this, verbose::DEBUG, "Received request packet " + req_ptr -> get_msg_str());
+
+        // gather the tag and set out of the address
+        unsigned address = req_ptr -> addr;
+        unsigned block_bit_size = (int) std::log2(_num_blocks);
+        unsigned set_index_bit_size = (int) std::log2(_num_sets);
+        
+        unsigned set = (address >> block_bit_size) & ( (int) std::pow(2, set_index_bit_size) - 1);
+        unsigned tag = address >> (block_bit_size + set_index_bit_size);
+
+        log.log(this, verbose::DEBUG, "Set Index: 0x" + to_hex_str(set) + ", Tag: 0x" + to_hex_str(tag));
+
+        // DEBUG
+        // an always hit scenario
+
+        // for hit scenario
+        auto resp = new resp_msg(true, address);
+
+        resp_ptr = resp;
+
+        put_to_prev(resp);
+
+        delete resp;
+    }
+}
+
 void cache::put_next()
 {
 
@@ -60,10 +90,7 @@ void cache::put_prev()
 
 }
 
-void cache::get_prev()
-{
 
-}
 
 // cache operations
 

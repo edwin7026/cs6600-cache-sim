@@ -34,6 +34,11 @@ enum OP_TYPE
 };
 
 /**
+ * @details Function that converts integer to string hex
+ */
+const std::string to_hex_str(unsigned val);
+
+/**
  * @details struct embodying a request packet
  */
 struct mem_req
@@ -44,16 +49,6 @@ struct mem_req
     // iniialize values
     mem_req() : req_op_type(OP_TYPE::LOAD), addr(0) {}
     mem_req(OP_TYPE op, unsigned addr) : req_op_type(op), addr(addr) {}
-
-    /**
-     * @details Function that converts integer to string hex
-     */
-    const std::string to_hex_str(unsigned val)
-    {
-        std::stringstream  ss;
-        ss << std::hex << val;
-        return ss.str();
-    }
 
     /**
      * @details Function that elaborates this request packet as a string
@@ -75,15 +70,7 @@ struct resp_msg
     // construct with address
     resp_msg(bool rdy, unsigned addr) : ready(rdy), addr(addr) {}
 
-    /**
-     * @details Function that converts integer to string hex
-     */
-    const std::string to_hex_str(unsigned val)
-    {
-        std::stringstream  ss;
-        ss << std::hex << val;
-        return ss.str();
-    }
+    
 
     /**
      * @details Function the elaborates this request packet
