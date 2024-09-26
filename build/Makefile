@@ -5,7 +5,7 @@ WARN = -Wall
 CFLAGS = $(OPT) $(WARN) $(INC) $(LIB)
 
 # List corresponding compiled object files here (.o files)
-SIM_OBJ = main.o cache.o
+SIM_OBJ = main.o cache.o cpu.o
  
 #################################
 
