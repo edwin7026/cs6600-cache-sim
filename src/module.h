@@ -12,6 +12,7 @@
 
 // local includes
 #include <common.h>
+#include <message.h>
 
 /**
  * @details Generic module class
