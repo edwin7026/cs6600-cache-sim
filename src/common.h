@@ -39,7 +39,6 @@ class logger : public base
     public:
 
         /**
-         * 
          * @details Default constructor setting default logging level to INFO
          */
         logger() : base("Logger")
