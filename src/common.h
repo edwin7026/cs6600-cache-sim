@@ -55,7 +55,7 @@ struct mem_req
      */
     const std::string get_msg_str()
     {
-        return "{OP: " + std::to_string(req_op_type) + ", ADDR: " + to_hex_str(addr) + "}";
+        return "{OP: " + std::to_string(req_op_type) + ", ADDR: 0x" + to_hex_str(addr) + "}";
     };
 };
 
@@ -77,7 +77,7 @@ struct resp_msg
      */
     const std::string get_msg_str()
     {
-        return "{RDY: " + std::to_string(ready) + ", ADDR: " + to_hex_str(addr) + "}";
+        return "{RDY: " + std::to_string(ready) + ", ADDR: 0x" + to_hex_str(addr) + "}";
     }
 };
 

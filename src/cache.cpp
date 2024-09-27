@@ -57,7 +57,75 @@ void cache::get_frm_prev()
         unsigned set = (address >> block_bit_size) & ( (int) std::pow(2, set_index_bit_size) - 1);
         unsigned tag = address >> (block_bit_size + set_index_bit_size);
 
-        log.log(this, verbose::DEBUG, "Set Index: 0x" + to_hex_str(set) + ", Tag: 0x" + to_hex_str(tag));
+        log.log(this, verbose::DEBUG, "Requested Set Index: 0x" + to_hex_str(set) + ", Tag: 0x" + to_hex_str(tag));
+
+        // get set
+        auto set_content = _v_cache_states[set];
+        unsigned old_count = 0;
+        bool is_hit = false;
+
+        // // loop through lines for a tag match
+        // for (auto line : set_content)
+        // {
+        //     // tag matcing
+        //     if (tag == line._tag && line._valid)
+        //     {
+        //         // Cache hit
+        //         is_hit = true;
+
+        //         log.log(this, verbose::DEBUG, "Cache Hit");
+
+        //         if (req_ptr -> req_op_type == OP_TYPE::LOAD) 
+        //         {
+                    
+        //         } 
+        //         else if (req_ptr -> req_op_type == OP_TYPE::STORE)
+        //         {
+        //             // set line to dirty
+        //             line._dirty = true;
+        //         }
+
+        //         // LRU stuff
+
+        //         // get older counter
+        //         old_count = line._count;
+        //         // reset counter for hit line
+        //         line._count = 0;
+
+        //         // increment counters of other lines accordingly
+        //         for (auto other_line : set_content)
+        //         {
+        //             if (other_line._tag != tag)
+        //             {
+        //                 // incrememnt counters for all other lines with count less than old count of hit line
+        //                 if (other_line._count < old_count)
+        //                 {
+        //                     // handle saturation
+        //                     if (other_line._count != _assoc) {
+        //                         other_line._count = other_line._count + 1;
+        //                     }
+        //                 }
+        //             }
+        //         }
+
+        //         auto resp = new resp_msg(true, address);
+        //         resp_ptr = resp;
+
+        //         put_to_prev(resp);
+
+        //         delete resp;
+        //     }
+        //     else
+        //     {
+        //         // 
+        //     }
+        // }
+
+        // // handle a miss
+        // if (!is_hit)
+        // {
+
+        // }
 
         // DEBUG
         // an always hit scenario
