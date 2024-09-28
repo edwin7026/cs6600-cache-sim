@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
     unsigned l1_cache_size = 256;
     unsigned l1_cache_assoc = 1;
     unsigned l1_cache_block_size = 16;
-    unsigned l1_cache_num_victim_blocks = 0;
+    unsigned l1_cache_num_victim_blocks = 1;
 
     // construct a logger
     logger log(verbose::DEBUG);

@@ -23,7 +23,7 @@ struct cache_line_states
     unsigned _count;
 
     // initialize values to 0 at construction
-    cache_line_states() : _valid(0), _dirty(0), _tag(0), _count(0) {}
+    cache_line_states() : _valid(false), _dirty(false), _tag(0), _count(0) {}
 };
 
 /**
@@ -45,7 +45,15 @@ class cache : public module
         unsigned _num_blocks;
         unsigned _num_sets;
 
-        // victim cache size
+        unsigned _block_bit_size;
+        unsigned _set_index_bit_size;
+
+        // cache replacement helper data members1
+        bool _is_repl_on;
+        cache_line_states* repl_line;
+
+        // victim cache
+        bool _is_victim_cache_en;
         unsigned _num_victim_blocks;
 
         repl_policy_enum _repl_policy;
@@ -55,6 +63,29 @@ class cache : public module
 
         // victim cache
         std::vector<cache_line_states> _v_victim_cache;
+
+        // Private member functions
+
+        /**
+         * @details Get the first invalid line
+         */
+        cache_line_states* get_invalid_line(std::vector<cache_line_states>& set_content);
+
+        /**
+         * @details LRU update on replacement
+         */
+        void lru_repl_update(const std::vector<cache_line_states>& set_content, cache_line_states& hit_line);
+
+        /**
+         * @details Update counters of a line based on a hit
+         */
+        void lru_hit_update(const std::vector<cache_line_states>& set_content, cache_line_states& hit_line);
+
+        /**
+         * @details Get least recently used line
+         */
+        cache_line_states* get_lru_line(std::vector<cache_line_states>& set_content);
+ 
 
     public:
 
@@ -80,27 +111,17 @@ class cache : public module
         // module interface definitions for inter-cache communication
 
         /**
-         * @details This function places requests to lower level in hierarchy
-         **/ 
-        void put_next();
-
-        /**
-         * @details This function accepts requests from lower level in hierarchy
-         **/
-        void get_next(unsigned addr);
-
-        /**
-         * @details This function places request to the next higher level in the hierarchy
-         */
-        void put_prev();
-
-        /**
-         * @details This function accepts requests from the next higher level in the hierarchy
+         * @details This overriding function accepts requests from the previous level in the hierarchy
          */
         void get_frm_prev();
 
+        /**
+         * @details This overriding function takes response from the next level in hierarchy
+         */
+        void get_frm_next();
+
         // cache operations
-        
+               
         /**
          * @details replace a particular line from the cachce
          */
