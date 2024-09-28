@@ -26,13 +26,6 @@ struct cache_line_states
     cache_line_states() : _valid(false), _dirty(false), _tag(0), _count(0) {}
 };
 
-/**
- * @details enumeration of various replacement policies
- */
-enum repl_policy_enum {
-    LRU
-};
-
 class cache : public module
 {
     private:
@@ -55,8 +48,6 @@ class cache : public module
         // victim cache
         bool _is_victim_cache_en;
         unsigned _num_victim_blocks;
-
-        repl_policy_enum _repl_policy;
 
         // cache states
         std::vector<std::vector<cache_line_states>> _v_cache_states;
@@ -99,8 +90,7 @@ class cache : public module
          **/
         cache(const std::string& name, const unsigned& size, const unsigned& assoc, const unsigned& blocksize, 
             const unsigned& num_victim_blocks,
-            const logger& log,
-            const repl_policy_enum& repl_policy = repl_policy_enum::LRU
+            const logger& log
         );
 
         /**

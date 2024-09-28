@@ -31,8 +31,7 @@ int main(int argc, char* argv[])
         l1_cache_assoc,
         l1_cache_block_size,
         l1_cache_num_victim_blocks,
-        log,
-        repl_policy_enum::LRU);
+        log);
 
     // memory test
     main_memory main_mem(log);

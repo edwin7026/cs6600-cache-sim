@@ -13,14 +13,11 @@ cache::cache()
 
 cache::cache(const std::string& name, const unsigned& size, const unsigned& assoc, const unsigned& blocksize, 
     const unsigned& num_victim_blocks,
-    const logger& log_obj,
-    const repl_policy_enum& repl_policy
-    ) :
+    const logger& log_obj) :
     module(name, log_obj),
     _size(size),
     _assoc(assoc),
     _blocksize(blocksize),
-    _repl_policy(repl_policy),
     _num_victim_blocks(num_victim_blocks),
     _v_cache_states(size / blocksize / assoc, std::vector<cache_line_states>(assoc)),
     _v_victim_cache(num_victim_blocks)
@@ -31,12 +28,10 @@ cache::cache(const std::string& name, const unsigned& size, const unsigned& asso
     _size = size;
     _assoc = assoc;
     _blocksize = blocksize;
-    _repl_policy = repl_policy;
 
     // get size parameters
     _num_blocks = _size / _blocksize;
     _num_sets = _num_blocks / _assoc;
-    _repl_policy = repl_policy;
 
     _block_bit_size = (int) std::log2(_num_blocks);
     _set_index_bit_size = (int) std::log2(_num_sets);
