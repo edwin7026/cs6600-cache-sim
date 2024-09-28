@@ -12,6 +12,8 @@
 #include <string>
 #include <cmath>
 
+#include <assert.h>
+
 #include <module.h>
 
 struct cache_line_states
@@ -41,9 +43,12 @@ class cache : public module
         unsigned _block_bit_size;
         unsigned _set_index_bit_size;
 
-        // cache replacement helper data members1
+        // cache replacement helper data members
         bool _is_repl_on;
-        cache_line_states* repl_line;
+        cache_line_states* _repl_line;
+
+        // eviction mode
+        bool _is_evict_on;
 
         // victim cache
         bool _is_victim_cache_en;
@@ -65,7 +70,7 @@ class cache : public module
         /**
          * @details LRU update on replacement
          */
-        void lru_repl_update(const std::vector<cache_line_states>& set_content, cache_line_states& hit_line);
+        void lru_repl_update(std::vector<cache_line_states>* set_content, cache_line_states& hit_line);
 
         /**
          * @details Update counters of a line based on a hit
@@ -76,8 +81,12 @@ class cache : public module
          * @details Get least recently used line
          */
         cache_line_states* get_lru_line(std::vector<cache_line_states>& set_content);
- 
 
+        /**
+         * @details Function to swap lines between main cache and victim cache
+         */
+        void swap_cache_line(unsigned cache_set, cache_line_states* cache_line_ptr, cache_line_states* victim_line_ptr);
+ 
     public:
 
         // default constructor
@@ -110,22 +119,27 @@ class cache : public module
          */
         void get_frm_next();
 
-        // cache operations
-               
-        /**
-         * @details replace a particular line from the cachce
-         */
-        void replace();
+        // utility functions
 
         /**
-         * @details write to cache
+         * @details get the tag for main cache
          */
-        void write();
+        unsigned get_cache_tag(unsigned addr);
 
         /**
-         * @details read from cache
+         * @details get the tag for victim cache
          */
-        void read();
+        unsigned get_victim_tag(unsigned addr);
+
+        /**
+         * @details get the set number
+         */
+        unsigned get_set_num(unsigned addr);
+
+        /**
+         * @details This function prints cache contents
+         */
+        void print_cache_content();
 
         // CPU operations
 

@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     
     // l1 parameters
     unsigned l1_cache_size = 256;
-    unsigned l1_cache_assoc = 1;
+    unsigned l1_cache_assoc = 2;
     unsigned l1_cache_block_size = 16;
     unsigned l1_cache_num_victim_blocks = 1;
 
@@ -42,6 +42,8 @@ int main(int argc, char* argv[])
 
     // start the sequencer
     CPU.sequencer();
+
+    l1_cache.print_cache_content();
 
     return 0;
 }
