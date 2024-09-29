@@ -14,7 +14,7 @@ cache::cache()
 cache::cache(const std::string& name, const unsigned& size, const unsigned& assoc, const unsigned& blocksize, 
     const unsigned& num_victim_blocks,
     const logger& log_obj,
-    perf_counters* hpm_counter) :
+    perf_counters::cache_counters* hpm_counter) :
     module(name, log_obj),
     _size(size),
     _assoc(assoc),
@@ -59,7 +59,7 @@ void cache::get_frm_prev()
     if (ifc_prev != nullptr)
     {
 
-        print_cache_content();
+        //print_cache_content();
 
         log.log(this, verbose::DEBUG, "Received request packet " + req_ptr_prev -> get_msg_str());
 
@@ -82,7 +82,7 @@ void cache::get_frm_prev()
         log.log(this, verbose::DEBUG, "Requested Set Index: 0x" + to_hex_str(req_set) + ", Tag: 0x" + to_hex_str(req_tag));
         
         // DEBUG
-        std::getchar();
+        // std::getchar();
 
         // get set
         auto& set_content = _v_cache_states[req_set];
@@ -147,8 +147,8 @@ void cache::get_frm_prev()
 
             // Check victim cache
 
-            // if victim cache exists, check through victim cache
-            if (_is_victim_cache_en)
+            // if victim cache exists and no space in set, check through victim cache
+            if (_is_victim_cache_en && inv_line_ptr == nullptr)
             {
                 bool is_victim_hit = false;
                 log.log(this, verbose::DEBUG, "Looking through victim cache");
@@ -167,23 +167,25 @@ void cache::get_frm_prev()
                             
                             // no space in set. swap with the lru line in main cache
                             cache_line_states* lru_line = get_lru_line(set_content);
+                            
+                            // increment swap requests number
+                            hpm_counter_ptr->num_swap_req++;
 
                             swap_cache_line(req_set, lru_line, &*victim_line);
+
+                            // exchange count values
+                            std::swap(victim_line->_count, lru_line->_count);
                             
                             // Update LRU counters on hit in victim cache
-                            lru_repl_update(&_v_victim_cache, *victim_line);
+                            lru_hit_update(&_v_victim_cache, *victim_line);
 
                             // Update LRU counters in main cache
-                            lru_repl_update(&set_content, *victim_line);
+                            lru_repl_update(&set_content, *lru_line);
                         }
                         else 
                         {
                             // there are invalid lines, bring that line here and invalidate the one in victim cache
-                            log.log(this, verbose::DEBUG, "Loading victim block to cache. Invalidating in victim cache");
-
-                            // TODO
-                            // DEBUG just wanted to see if we'll even reach this scenario
-                            // remember to remove assert.h
+                            log.log(this, verbose::FATAL, "Non-full set should not have a victim cache hit!");
                             assert(false);
                         }
 
@@ -323,7 +325,7 @@ void cache::get_frm_next()
 
                     // swap the lru line in main cache with evicted line
                     // and invalidate the line put in main cache
-                    
+
                     // swap lines
                     swap_cache_line(resp_set, cache_lru_line, victim_lru_line);
                     
@@ -335,7 +337,7 @@ void cache::get_frm_next()
 
                     // finally update the lru line with response
                     cache_lru_line ->_dirty = (bool) req_ptr_prev -> req_op_type;
-                    cache_lru_line -> _tag = get_cache_tag(resp_ptr_next -> addr);
+                    cache_lru_line -> _tag = get_cache_tag(req_ptr_prev -> addr);
                     cache_lru_line -> _valid = true;
                     cache_lru_line -> _count = 0;
                 
@@ -364,7 +366,7 @@ void cache::get_frm_next()
 
                     // fincallu update the lru cache line with response
                     cache_lru_line ->_dirty = (bool) req_ptr_prev -> req_op_type;
-                    cache_lru_line -> _tag = get_cache_tag(resp_ptr_next -> addr);
+                    cache_lru_line -> _tag = get_cache_tag(req_ptr_prev -> addr);
                     cache_lru_line -> _valid = true;
                     cache_lru_line -> _count = 0;
 
@@ -477,7 +479,7 @@ void cache::lru_repl_update(std::vector<cache_line_states>* set_content, cache_l
     {
         if (other_line._tag != hit_line._tag && other_line._valid)
         {
-            if (other_line._count != _assoc) {
+            if (other_line._count != set_content->size()) {
                 other_line._count = other_line._count + 1;
             }
         }
@@ -503,7 +505,7 @@ void cache::lru_hit_update(std::vector<cache_line_states>* set_content, cache_li
             if (other_line._count < old_count)
             {
                 // handle saturation
-                if (other_line._count != _assoc) {
+                if (other_line._count != set_content->size()) {
                     other_line._count = other_line._count + 1;
                 }
             }
@@ -579,11 +581,18 @@ void cache::print_cache_content()
 
     if (_is_victim_cache_en)
     {
-        log.log(this, verbose::DEBUG, "Victim Cache Content");
+        std::cout << "===== VC contents =====" << std::endl;
+        std::cout << " set 0: \t";
         for (auto line : _v_victim_cache)
         {
-            std::cout << line._valid << " " 
-                    << line._dirty << " 0x" << std::hex << line._tag << " \t" << line._count << "\t\t";
+            std::ios_base::fmtflags f(std::cout.flags());
+            std::cout << std::hex << line._tag;
+            std::cout.flags(f);
+            if (line._dirty){
+                std::cout << " " << "D";
+            }
+            std::cout << " " << line._count;
+            std::cout << "  \t\t";
         }
         std::cout << std::endl;
     }

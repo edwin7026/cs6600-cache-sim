@@ -56,7 +56,7 @@ class cache : public module
         unsigned _num_victim_blocks;
 
         // performance counter
-        perf_counters* hpm_counter_ptr;
+        perf_counters::cache_counters* hpm_counter_ptr;
 
         // cache states
         std::vector<std::vector<cache_line_states>> _v_cache_states;
@@ -104,7 +104,7 @@ class cache : public module
         cache(const std::string& name, const unsigned& size, const unsigned& assoc, const unsigned& blocksize, 
             const unsigned& num_victim_blocks,
             const logger& log,
-            perf_counters* hpm_counter
+            perf_counters::cache_counters* hpm_counter
         );
 
         /**

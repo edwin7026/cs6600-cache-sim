@@ -64,7 +64,7 @@ void cpu::sequencer()
             // get address
             ss >> opr;
             try {
-               req_msg->addr = std::stoi(opr, nullptr, 16);
+               req_msg->addr = std::stoul(opr, nullptr, 16);
             }
             catch (const std::invalid_argument&) {
                log.log(this, verbose::FATAL, _trace_file_path + ": Cannot convert address hex to int at line " + std::to_string(count));
