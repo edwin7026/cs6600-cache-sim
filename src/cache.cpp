@@ -82,7 +82,7 @@ void cache::get_frm_prev()
         log.log(this, verbose::DEBUG, "Requested Set Index: 0x" + to_hex_str(req_set) + ", Tag: 0x" + to_hex_str(req_tag));
         
         // DEBUG
-        // std::getchar();
+        std::getchar();
 
         // get set
         auto& set_content = _v_cache_states[req_set];
@@ -109,7 +109,7 @@ void cache::get_frm_prev()
                 }
 
                 // LRU stuffs happen here
-                lru_hit_update(set_content, line);
+                lru_hit_update(&set_content, line);
 
                 // create a response back previous level to move to the next request
                 auto resp = new resp_msg(true, address);
@@ -484,7 +484,7 @@ void cache::lru_repl_update(std::vector<cache_line_states>* set_content, cache_l
     }
 }
 
-void cache::lru_hit_update(const std::vector<cache_line_states>& set_content, cache_line_states& hit_line)
+void cache::lru_hit_update(std::vector<cache_line_states>* set_content, cache_line_states& hit_line)
 {
 
     log.log(this, verbose::DEBUG, "Updating LRU counters");
@@ -495,7 +495,7 @@ void cache::lru_hit_update(const std::vector<cache_line_states>& set_content, ca
     hit_line._count = 0;
                 
     // increment counters of other lines accordingly
-    for (auto other_line : set_content)
+    for (auto& other_line : *set_content)
     {
         if (other_line._tag != hit_line._tag && other_line._valid)
         {
@@ -569,6 +569,7 @@ void cache::print_cache_content()
             if (line._dirty){
                 std::cout << " " << "D";
             }
+            std::cout << " " << line._count;
             std::cout << "  \t\t";
         }
         std::cout << std::endl;

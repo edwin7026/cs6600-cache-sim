@@ -79,7 +79,7 @@ class cache : public module
         /**
          * @details Update counters of a line based on a hit
          */
-        void lru_hit_update(const std::vector<cache_line_states>& set_content, cache_line_states& hit_line);
+        void lru_hit_update(std::vector<cache_line_states>* set_content, cache_line_states& hit_line);
 
         /**
          * @details Get least recently used line
