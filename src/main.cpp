@@ -8,8 +8,6 @@
 
 int main(int argc, char* argv[]) 
 {
-    // parser to parse arguments to simulator
-    
     // l1 parameters
     unsigned l1_cache_size = 1024;
     unsigned l1_cache_assoc = 2;
@@ -19,19 +17,33 @@ int main(int argc, char* argv[])
     // l2 parameters
     unsigned l2_cache_size = 8192;
     unsigned l2_cache_assoc = 4;
+
+    std::string trace_file_path = "";
+
+    // parse arguments
+    l1_cache_size = std::stoul(argv[1]);
+    l1_cache_assoc = std::stoul(argv[2]);
+    l1_cache_block_size = std::stoul(argv[3]);
+    l1_cache_num_victim_blocks = std::stoul(argv[4]);
+
+    l2_cache_size = std::stoul(argv[5]);
+    l2_cache_assoc = std::stoul(argv[6]);
+
+    trace_file_path = argv[7];
+
+    // inferred params
     unsigned l2_cache_block_size = 16;
     unsigned l2_cache_num_victim_blocks = 0;
-
+    
     // construct a logger
     logger log(verbose::DEBUG);
 
     // initialize performance counters
     perf_counters::cache_counters hpm_counters_l1;
-    perf_counters::cache_counters hpm_counters_l2; 
     
     // cpu test
     cpu CPU(
-        "./trace.txt",
+        trace_file_path,
         log
     );
      
@@ -46,35 +58,55 @@ int main(int argc, char* argv[])
         &hpm_counters_l1);
     // attach performance counter
     hpm_counters_l1.attach_cache(&l1_cache);
-    
-    //l2
-    cache l2_cache(
-        "L2",
-        l2_cache_size,
-        l2_cache_assoc,
-        l2_cache_block_size,
-        l2_cache_num_victim_blocks,
-        log,
-        &hpm_counters_l2);
-    // attach performance counter
-    hpm_counters_l2.attach_cache(&l2_cache);
-    
+
     // memory test
     main_memory main_mem(log);
 
     // make connections
     CPU.mk_next_connection(&l1_cache);
-    l1_cache.mk_next_connection(&l2_cache);
-    l2_cache.mk_next_connection(&main_mem);
 
-    // start the sequencer
-    CPU.sequencer();
+    if (l2_cache_size != 0)
+    {
+        // performance counter for L2
+        perf_counters::cache_counters hpm_counters_l2; 
+        
+        //l2
+        cache l2_cache(
+            "L2",
+            l2_cache_size,
+            l2_cache_assoc,
+            l2_cache_block_size,
+            l2_cache_num_victim_blocks,
+            log,
+            &hpm_counters_l2);
+        // attach performance counter
+        hpm_counters_l2.attach_cache(&l2_cache);
 
-    l1_cache.print_cache_content();
-    l2_cache.print_cache_content();
+        // make rest of the connections
+        l1_cache.mk_next_connection(&l2_cache);
+        l2_cache.mk_next_connection(&main_mem);
 
-    hpm_counters_l1.print();
-    hpm_counters_l2.print();
+        // start CPU sequencer
+        CPU.sequencer();
 
+        // print contents
+        l1_cache.print_cache_content();
+        l2_cache.print_cache_content();
+
+        hpm_counters_l1.print();
+        hpm_counters_l2.print();
+    }
+    else
+    {
+        // no L2, so connect to main memory
+        l1_cache.mk_next_connection(&main_mem);
+
+        // start CPU sequencer
+        CPU.sequencer();
+
+        l1_cache.print_cache_content();
+        hpm_counters_l1.print();
+    }
+    
     return 0;
 }

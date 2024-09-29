@@ -45,8 +45,8 @@ namespace perf_counters
         void print()
         {
             std::cout << "Number of " << cache_ptr->get_name() << " reads: " << num_reads << std::endl;
-            std::cout << "Number of " << cache_ptr->get_name() << " writes: " << num_writes << std::endl;
             std::cout << "Number of " << cache_ptr->get_name() << " read misses: " << read_misses << std::endl;
+            std::cout << "Number of " << cache_ptr->get_name() << " writes: " << num_writes << std::endl;
             std::cout << "Number of " << cache_ptr->get_name() << " write misses: " << write_misses << std::endl;
             std::cout << "Number of swap requests: " << num_swap_req << std::endl;
         }

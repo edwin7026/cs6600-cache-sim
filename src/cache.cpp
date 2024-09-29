@@ -59,7 +59,7 @@ void cache::get_frm_prev()
     if (ifc_prev != nullptr)
     {
 
-        //print_cache_content();
+        // print_cache_content();
 
         log.log(this, verbose::DEBUG, "Received request packet " + req_ptr_prev -> get_msg_str());
 
@@ -393,7 +393,7 @@ void cache::get_frm_next()
 
                     // write request to next level
                     evict_req->req_op_type = OP_TYPE::STORE;
-                    evict_req->addr = cache_lru_line->_tag << (_set_index_bit_size + _block_bit_size);
+                    evict_req->addr = ((cache_lru_line->_tag << _set_index_bit_size) | resp_set) << _block_bit_size;
 
                     put_to_next(evict_req);
 
@@ -562,23 +562,25 @@ void cache::print_cache_content()
     unsigned set_count = 0;
     for (auto set : _v_cache_states)
     {   
-        std::cout << " set " << set_count << ": \t";
+        std::cout << " set " << set_count << ":  ";
         for (auto line : set)
         {
             std::ios_base::fmtflags f(std::cout.flags());
             std::cout << std::hex << line._tag;
             std::cout.flags(f);
             if (line._dirty){
-                std::cout << " " << "D";
+                std::cout << " D";
+            } else {
+                std::cout << "  ";
             }
-            std::cout << " " << line._count;
-            std::cout << "  \t\t";
+            std::cout << "  ";
         }
         std::cout << std::endl;
 
         set_count = set_count + 1;
     }
-
+    std::cout << std::endl;
+    
     if (_is_victim_cache_en)
     {
         std::cout << "===== VC contents =====" << std::endl;
@@ -596,7 +598,6 @@ void cache::print_cache_content()
         }
         std::cout << std::endl;
     }
-
 }
 
 
