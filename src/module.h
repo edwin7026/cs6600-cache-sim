@@ -25,8 +25,11 @@ class module : public base
         module* ifc_next;        // towards memory
 
         // get and put storage
-        mem_req* req_ptr;
-        resp_msg* resp_ptr;
+        mem_req* req_ptr_prev;
+        resp_msg* resp_ptr_prev;
+
+        mem_req* req_ptr_next;
+        resp_msg* resp_ptr_next;
 
         // logger instance
         logger log;
@@ -42,6 +45,10 @@ class module : public base
         module(const std::string& name, const logger& log) : base(name), log(log) {
             ifc_prev = nullptr;
             ifc_next = nullptr;
+            req_ptr_prev = nullptr;
+            resp_ptr_prev = nullptr;
+            req_ptr_next = nullptr;
+            resp_ptr_prev = nullptr;
         }
 
         // hierarchy constructor
@@ -82,12 +89,18 @@ class module : public base
         }
 
         /**
-        * @details get request pointer
+        * @details get next level's request pointer
         */
-        mem_req* get_req() {
-            return req_ptr;
+        mem_req* get_next_req() {
+            return req_ptr_next;
         }
 
+        /**
+         * @details get previous level's request pointer
+         */
+        mem_req* get_prev_req() {
+            return req_ptr_prev;
+        }
 
         // putters and getter interfaces
 
@@ -101,20 +114,20 @@ class module : public base
                 log.log(this, verbose::DEBUG, "Sending request packet " +  req->get_msg_str() + " --> " + ifc_next->get_name());
 
                 // push message ptr to next level
-                ifc_next -> req_ptr = req;
+                ifc_next -> req_ptr_prev = req;
 
                 // evaluate get method for next level
                 ifc_next -> get_frm_prev();
 
                 // pop off the message
-                ifc_next -> req_ptr = nullptr;
+                ifc_next -> req_ptr_prev = nullptr;
             }
         }
 
         virtual void get_frm_next()
         {
             if (ifc_next != nullptr) {
-                ifc_next -> put_to_prev(resp_ptr);
+                ifc_next -> put_to_prev(resp_ptr_prev);
             }
         }
         
@@ -126,20 +139,20 @@ class module : public base
                 log.log(this, verbose::DEBUG, "Sending response packet " + resp->get_msg_str() + " --> " + ifc_prev->get_name());
 
                 // push resp message to previous level
-                ifc_prev -> resp_ptr = resp;
+                ifc_prev -> resp_ptr_next = resp;
 
                 // evaluate get method for previous level
                 ifc_prev -> get_frm_next();
 
                 // pop off the message
-                ifc_prev -> req_ptr = nullptr;
+                ifc_prev -> req_ptr_next = nullptr;
             }
         }
 
         virtual void get_frm_prev()
         {
             if (ifc_prev != nullptr) {
-                ifc_prev -> put_to_next(req_ptr);
+                ifc_prev -> put_to_next(req_ptr_next);
             }
         }
 

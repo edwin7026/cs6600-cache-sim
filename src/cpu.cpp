@@ -73,7 +73,7 @@ void cpu::sequencer()
             }
 
             // register this request
-            req_ptr = req_msg;
+            req_ptr_next = req_msg;
 
             // send out a request through put next port
             put_to_next(req_msg);
@@ -97,5 +97,5 @@ void cpu::sequencer()
 
 void cpu::get_frm_next()
 {
-    log.log(this, verbose::DEBUG, "Committing " + req_ptr->get_msg_str());
+    log.log(this, verbose::DEBUG, "Committing " + req_ptr_next->get_msg_str());
 }

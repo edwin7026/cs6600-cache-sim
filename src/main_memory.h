@@ -33,25 +33,18 @@ class main_memory : public module
             if (ifc_prev != nullptr)
             {
                 
-                log.log(this, verbose::DEBUG, "Received request packet " +  ifc_prev -> get_req() -> get_msg_str());
+                log.log(this, verbose::DEBUG, "Received request packet " +  req_ptr_prev -> get_msg_str());
 
-                _mem_acc_addr = req_ptr -> addr;
-
-                if (req_ptr -> req_op_type == OP_TYPE::LOAD)
-                {
-                    auto resp = new resp_msg(true, _mem_acc_addr);
-
-                    // register this reponse
-                    resp_ptr = resp;
-
-                    put_to_prev(resp);
+                _mem_acc_addr = req_ptr_prev -> addr;
                 
-                    delete resp;
-                } else {
-                    // TODO do nothing
+                auto resp = new resp_msg(true, _mem_acc_addr);
 
-                    log.log(this, verbose::DEBUG, "Storing..");
-                }
+                // register this reponse
+                resp_ptr_prev = resp;
+
+                put_to_prev(resp);
+                
+                delete resp;
             }
         }
 

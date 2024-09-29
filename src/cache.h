@@ -15,6 +15,7 @@
 #include <assert.h>
 
 #include <module.h>
+#include <perf_counters.h>
 
 struct cache_line_states
 {
@@ -53,6 +54,9 @@ class cache : public module
         // victim cache
         bool _is_victim_cache_en;
         unsigned _num_victim_blocks;
+
+        // performance counter
+        perf_counters* hpm_counter_ptr;
 
         // cache states
         std::vector<std::vector<cache_line_states>> _v_cache_states;
@@ -99,7 +103,8 @@ class cache : public module
          **/
         cache(const std::string& name, const unsigned& size, const unsigned& assoc, const unsigned& blocksize, 
             const unsigned& num_victim_blocks,
-            const logger& log
+            const logger& log,
+            perf_counters* hpm_counter
         );
 
         /**

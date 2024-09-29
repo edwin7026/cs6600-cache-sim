@@ -9,6 +9,8 @@
 const std::string to_hex_str(unsigned val)
 {
     std::stringstream  ss;
+    auto old_flags = ss.flags();
     ss << std::hex << val;
+    ss.flags(old_flags);
     return ss.str();
 }
