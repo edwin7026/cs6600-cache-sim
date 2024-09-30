@@ -19,7 +19,7 @@ cpu::cpu(const std::string &path, const logger& log_obj) : module("Core", log_ob
 
 void cpu::sequencer()
 {
-    log.log(this, verbose::INFO, "Reading trace file: " + _trace_file_path);
+    log.log(this, verbose::DEBUG, "Reading trace file: " + _trace_file_path);
     
     std::ifstream stream(_trace_file_path);
 
@@ -89,9 +89,9 @@ void cpu::sequencer()
 
     // execution is done
     if (err) {
-        log.log(this, verbose::INFO, "Ending with errors");
+        log.log(this, verbose::ERROR, "Ending with errors");
     } else {
-        log.log(this, verbose::INFO, "Execution completed!");
+        log.log(this, verbose::DEBUG, "Execution completed!");
     }
 }
 

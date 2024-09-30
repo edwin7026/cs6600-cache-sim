@@ -156,6 +156,11 @@ class module : public base
             }
         }
 
+        virtual void print()
+        {
+
+        }
+
         /**
          * @details destructor
          */

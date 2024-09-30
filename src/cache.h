@@ -8,6 +8,7 @@
 #define CACHE_H
 
 #include <vector>
+#include <algorithm>
 #include <cstdio>
 #include <string>
 #include <cmath>
@@ -144,7 +145,7 @@ class cache : public module
         /**
          * @details This function prints cache contents
          */
-        void print_cache_content();
+        void print();
 
         // CPU operations
 

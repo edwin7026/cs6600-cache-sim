@@ -59,7 +59,7 @@ void cache::get_frm_prev()
     if (ifc_prev != nullptr)
     {
 
-        // print_cache_content();
+        print();
 
         log.log(this, verbose::DEBUG, "Received request packet " + req_ptr_prev -> get_msg_str());
 
@@ -160,7 +160,7 @@ void cache::get_frm_prev()
                         log.log(this, verbose::DEBUG, "Victim cache hit!");
                         is_victim_hit = true;
 
-                        // get least recently used line
+                        // set is full get least recently used line
                         if (inv_line_ptr == nullptr) {
 
                             log.log(this, verbose::DEBUG, "Set full, initiating LRU replacement with victim cache");
@@ -200,20 +200,67 @@ void cache::get_frm_prev()
 
                 if (!is_victim_hit)
                 {
+                    // get an invalid line in victim cache
+                    cache_line_states* inv_victim_line_ptr = get_invalid_line(_v_victim_cache);
+
                     // victim cache miss
                     log.log(this, verbose::DEBUG, "Victim cache miss!");
 
-                    _repl_line = inv_line_ptr;
+                    _repl_line = inv_victim_line_ptr;
 
                     // set parameters accordingly to flag if replacement is needed 
-                    if (inv_line_ptr == nullptr)
+                    if (inv_victim_line_ptr == nullptr)
                     {   
-                        log.log(this, verbose::DEBUG, "Set is full. Replacement needed!");
+                        log.log(this, verbose::DEBUG, "Victim cache is full. Eviction needed!");
 
+                        // get lru line from victim cache
+                        cache_line_states* victim_lru_line = get_lru_line(_v_victim_cache);
+
+                        if (victim_lru_line->_dirty)
+                        {
+                            log.log(this, verbose::DEBUG, "Line is dirty. Evicting");
+                            _is_evict_on = true;
+                            // write to next level
+                            // create new request packet
+                            mem_req* evict_req = new mem_req;
+
+                            // write request to next level
+                            evict_req->req_op_type = OP_TYPE::STORE;
+                            evict_req->addr = ((victim_lru_line->_tag << _set_index_bit_size) | req_set) << _block_bit_size;
+
+                            put_to_next(evict_req);
+
+                            delete evict_req;
+                            _is_evict_on = false;
+                        }
+                        else {
+                            log.log(this, verbose::DEBUG, "Line is not dirty. Invalidating");
+                        }
+
+                        // invalidate it
+                        victim_lru_line -> _valid = false;
+                    
                         // flag set for replacement
                         _is_repl_on = true;
+                        _repl_line = victim_lru_line;
                     }
                     else {
+                        // get lru line in set
+                        cache_line_states* lru_line = get_lru_line(set_content);
+
+                        // put the lru line to invalid space in cache
+                        *inv_victim_line_ptr = *lru_line;
+                        
+                        inv_victim_line_ptr->_tag = (inv_victim_line_ptr->_tag << _set_index_bit_size) | req_set;
+
+                        // lru update
+                        lru_repl_update(&_v_victim_cache, *inv_victim_line_ptr);
+
+                        // invalidate lru line
+                        lru_line -> _valid = false;
+
+                        // get new content here
+                        _repl_line = lru_line;
                         _is_repl_on = false;
                     }
 
@@ -235,9 +282,37 @@ void cache::get_frm_prev()
                 if (inv_line_ptr == nullptr)
                 {
                     log.log(this, verbose::DEBUG, "Set is full. Replacement needed!");
+
+                    // get lru line
+                    cache_line_states* lru_line = get_lru_line(set_content);
+
+                    if (lru_line->_dirty)
+                    {
+                        log.log(this, verbose::DEBUG, "Line is dirty. Evicting");
+                        _is_evict_on = true;
+                        // write to next level
+                        // create new request packet
+                        mem_req* evict_req = new mem_req;
+
+                        // write request to next level
+                        evict_req->req_op_type = OP_TYPE::STORE;
+                        evict_req->addr = ((lru_line->_tag << _set_index_bit_size) | req_set) << _block_bit_size;
+
+                        put_to_next(evict_req);
+
+                        delete evict_req;
+                        _is_evict_on = false;
+                    }
+                    else {
+                        log.log(this, verbose::DEBUG, "Line is not dirty. Invalidating");
+                    }
+
+                    // invalidate it
+                    lru_line -> _valid = false;
                     
                     // flag set for replacement
                     _is_repl_on = true;
+                    _repl_line = lru_line;
                 }
                 else
                 {
@@ -276,139 +351,35 @@ void cache::get_frm_next()
     // if replacement flag is set
     if (_is_repl_on)
     {
-        if (_repl_line == nullptr)
+        if (_repl_line != nullptr)
         {
             // main cache set is full
-            log.log(this, verbose::DEBUG, "Replacing line");
+            log.log(this, verbose::DEBUG, "Replacing an LRU line");
 
             // get lru line from main cache
+            std::cout << "Replacing from set "  << resp_set << std::endl;
             cache_line_states* cache_lru_line = get_lru_line(_v_cache_states[resp_set]);
 
             if (_is_victim_cache_en)
             {
-                // check if victim cache is full
-                cache_line_states* victim_inv_line = get_invalid_line(_v_victim_cache);
+                // swap the lru line in main cache with evicted line
+                // and invalidate the line put in main cache
 
-                if (victim_inv_line == nullptr)
-                {
-                    // victim cache full
-                    log.log(this, verbose::DEBUG, "Victim cache full. Evicting");
-                    _is_evict_on = true;
-
-                    // evicting lru line from victim cache
-                    // get lru line from victim cache
-                    cache_line_states* victim_lru_line = get_lru_line(_v_victim_cache);
-
-                    if (victim_lru_line -> _dirty)
-                    {
-                        
-                        log.log(this, verbose::DEBUG, "Line is dirty. Evicting");
-
-                        // create new request packet
-                        mem_req* evict_req = new mem_req;
-
-                        // write request to next level
-                        evict_req->req_op_type = OP_TYPE::STORE;
-                        evict_req->addr = victim_lru_line->_tag << _block_bit_size;
-
-                        put_to_next(evict_req);
-
-                        // retire the eviction request
-                        delete evict_req;
-                    }
-                    else {
-                        log.log(this, verbose::DEBUG, "Line is not dirty. Invalidating");
-                    }
-
-                    // invalidate the line in victim cache
-                    victim_lru_line -> _valid = false;
-
-                    // swap the lru line in main cache with evicted line
-                    // and invalidate the line put in main cache
-
-                    // swap lines
-                    swap_cache_line(resp_set, cache_lru_line, victim_lru_line);
+                // swap lines
+                swap_cache_line(resp_set, cache_lru_line, _repl_line);
                     
-                    // invalidate the line in cache
-                    cache_lru_line -> _valid = false;
+                // invalidate the line in cache
+                cache_lru_line -> _valid = false;
 
-                    // update lru numbers in victim cache
-                    lru_repl_update(&_v_victim_cache, *victim_lru_line);
+                // update lru numbers in victim cache
+                lru_repl_update(&_v_victim_cache, *_repl_line);
 
-                    // finally update the lru line with response
-                    cache_lru_line ->_dirty = (bool) req_ptr_prev -> req_op_type;
-                    cache_lru_line -> _tag = get_cache_tag(req_ptr_prev -> addr);
-                    cache_lru_line -> _valid = true;
-                    cache_lru_line -> _count = 0;
-                
-                    lru_repl_update(&_v_cache_states[resp_set], *cache_lru_line);
-
-                    _is_evict_on = false;
-
-                    if (ifc_prev != nullptr) {
-                        resp_ptr_prev = resp_ptr_next;
-                        put_to_prev(resp_ptr_prev);
-                    }
-                }
-                else
-                {
-                    log.log(this, verbose::DEBUG, "Evicting line to victim cache");
-
-                    swap_cache_line(resp_set, cache_lru_line, victim_inv_line);
-
-                    // invalidate the line in cache
-                    cache_lru_line -> _valid = false;
-
-                    // update lru numbers in victim cache
-                    lru_repl_update(&_v_victim_cache, *victim_inv_line);
-
-                    log.log(this, verbose::DEBUG, "Allocating response line");
-
-                    // fincallu update the lru cache line with response
-                    cache_lru_line ->_dirty = (bool) req_ptr_prev -> req_op_type;
-                    cache_lru_line -> _tag = get_cache_tag(req_ptr_prev -> addr);
-                    cache_lru_line -> _valid = true;
-                    cache_lru_line -> _count = 0;
-
-                    // update LRU numbers affter miss 
-                    lru_repl_update(&_v_cache_states[resp_set], *cache_lru_line);
-
-                    // put the response back to previous level 
-                    if (ifc_prev != nullptr) {
-                        resp_ptr_prev = resp_ptr_next;
-                        put_to_prev(resp_ptr_prev);
-                    }
-                }
-            }
-            else
-            {
-                _is_evict_on = true;
-
-                if (cache_lru_line -> _dirty)
-                {
-                    log.log(this, verbose::DEBUG, "Line is dirty. Evicting");
-
-                    // create new request packet
-                    mem_req* evict_req = new mem_req;
-
-                    // write request to next level
-                    evict_req->req_op_type = OP_TYPE::STORE;
-                    evict_req->addr = ((cache_lru_line->_tag << _set_index_bit_size) | resp_set) << _block_bit_size;
-
-                    put_to_next(evict_req);
-
-                    // retire the eviction request
-                    delete evict_req;
-                }
-                else {
-                    log.log(this, verbose::DEBUG, "Line is not dirty. Evicting");
-                }
-
-                cache_lru_line -> _dirty = (bool) req_ptr_prev -> req_op_type;
+                // finally update the lru line with response
+                cache_lru_line ->_dirty = (bool) req_ptr_prev -> req_op_type;
                 cache_lru_line -> _tag = get_cache_tag(req_ptr_prev -> addr);
                 cache_lru_line -> _valid = true;
                 cache_lru_line -> _count = 0;
-
+                
                 lru_repl_update(&_v_cache_states[resp_set], *cache_lru_line);
 
                 _is_evict_on = false;
@@ -418,10 +389,22 @@ void cache::get_frm_next()
                     put_to_prev(resp_ptr_prev);
                 }
             }
-        }
-        else
-        {
-            log.log(this, verbose::FATAL, "Replacement not needed for a non-full set");
+            else
+            {
+                log.log(this, verbose::DEBUG, "Filling evicted line with new content");
+
+                _repl_line -> _dirty = (bool) req_ptr_prev -> req_op_type;
+                _repl_line -> _tag = get_cache_tag(req_ptr_prev -> addr);
+                _repl_line -> _valid = true;
+                _repl_line -> _count = 0;
+
+                lru_repl_update(&_v_cache_states[resp_set], *_repl_line);
+
+                if (ifc_prev != nullptr) {
+                    resp_ptr_prev = resp_ptr_next;
+                    put_to_prev(resp_ptr_prev);
+                }
+            }
         }
     }
     else 
@@ -520,6 +503,7 @@ cache_line_states* cache::get_lru_line(std::vector<cache_line_states>& set_conte
 
     for (auto line = set_content.begin(); line != set_content.end(); line++)
     {
+        std::cout << line->_count << std::endl;
         if (line->_count >= max_count && line->_valid) {
             lru_line_ptr = &*line;
             max_count = line->_count;
@@ -556,14 +540,22 @@ unsigned cache::get_victim_tag(unsigned addr)
     return addr >> _block_bit_size;
 }
 
-void cache::print_cache_content()
+bool compare_lru_count(cache_line_states line1, cache_line_states line2)
+{
+        return line1._count < line2._count;
+}
+
+void cache::print()
 {
     std::cout << "===== " << name << " contents =====" << std::endl;
     unsigned set_count = 0;
+
     for (auto set : _v_cache_states)
-    {   
+    {
+        std::vector<cache_line_states> temp_set = set;
+        std::sort(temp_set.begin(), temp_set.end(), compare_lru_count);
         std::cout << " set " << set_count << ":  ";
-        for (auto line : set)
+        for (auto line : temp_set)
         {
             std::ios_base::fmtflags f(std::cout.flags());
             std::cout << std::hex << line._tag;
@@ -573,6 +565,7 @@ void cache::print_cache_content()
             } else {
                 std::cout << "  ";
             }
+            std::cout << "  " << line._count << "  ";
             std::cout << "  ";
         }
         std::cout << std::endl;
@@ -583,18 +576,21 @@ void cache::print_cache_content()
     
     if (_is_victim_cache_en)
     {
-        std::cout << "===== VC contents =====" << std::endl;
-        std::cout << " set 0: \t";
+        std::vector<cache_line_states> temp_set = _v_victim_cache;
+        std::sort(temp_set.begin(), temp_set.end(), compare_lru_count);
+        std::cout << " set 0:  ";
         for (auto line : _v_victim_cache)
         {
             std::ios_base::fmtflags f(std::cout.flags());
             std::cout << std::hex << line._tag;
             std::cout.flags(f);
             if (line._dirty){
-                std::cout << " " << "D";
+                std::cout << " D";
+            } else {
+                std::cout << "  ";
             }
-            std::cout << " " << line._count;
-            std::cout << "  \t\t";
+            std::cout << "  " << line._count << "  ";
+            std::cout << "  ";
         }
         std::cout << std::endl;
     }

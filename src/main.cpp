@@ -15,8 +15,8 @@ int main(int argc, char* argv[])
     unsigned l1_cache_num_victim_blocks = 0;
 
     // l2 parameters
-    unsigned l2_cache_size = 8192;
-    unsigned l2_cache_assoc = 4;
+    unsigned l2_cache_size = 0;
+    unsigned l2_cache_assoc = 0;
 
     std::string trace_file_path = "";
 
@@ -65,6 +65,15 @@ int main(int argc, char* argv[])
     // make connections
     CPU.mk_next_connection(&l1_cache);
 
+    std::cout << "===== Simulator configuration =====" << std::endl;
+    std::cout << " L1_SIZE:\t" << l1_cache_size << std::endl;
+    std::cout << " L1_ASSOC:\t" << l2_cache_assoc << std::endl;
+    std::cout << " L1_BLOCSIZE:\t" << l2_cache_block_size << std::endl;
+    std::cout << " VC_NUM_BLOCKS:\t" << l2_cache_num_victim_blocks << std::endl;
+    std::cout << " L2_SIZE:\t" << l2_cache_size << std::endl;
+    std::cout << " L2_ASSOC:\t" << l2_cache_assoc << std::endl;
+    std::cout << " trace_file:\t" << trace_file_path << std::endl << std::endl;
+
     if (l2_cache_size != 0)
     {
         // performance counter for L2
@@ -90,8 +99,8 @@ int main(int argc, char* argv[])
         CPU.sequencer();
 
         // print contents
-        l1_cache.print_cache_content();
-        l2_cache.print_cache_content();
+        l1_cache.print();
+        l2_cache.print();
 
         hpm_counters_l1.print();
         hpm_counters_l2.print();
@@ -104,7 +113,7 @@ int main(int argc, char* argv[])
         // start CPU sequencer
         CPU.sequencer();
 
-        l1_cache.print_cache_content();
+        l1_cache.print();
         hpm_counters_l1.print();
     }
     
