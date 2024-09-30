@@ -274,7 +274,9 @@ void cache::get_frm_prev()
                     }
                 }
             }
-            else
+            
+            // if victim cache is not enabled
+            if (!_is_victim_cache_en)
             {
                 // No victim cache
                 _repl_line = inv_line_ptr;
@@ -323,8 +325,15 @@ void cache::get_frm_prev()
                 if (ifc_next != nullptr)
                 {
                     // push request to next elvel
-                    req_ptr_next = req_ptr_prev;
+                    mem_req* miss_req = new mem_req;
+
+                    miss_req->req_op_type = OP_TYPE::LOAD;
+                    miss_req->addr = req_ptr_prev->addr;
+
+                    req_ptr_next = miss_req;
                     put_to_next(req_ptr_next);
+
+                    delete miss_req;
                 } else {
                     log.log(this, verbose::FATAL, "No next level connection! Check conncections");
                 }
@@ -405,6 +414,9 @@ void cache::get_frm_next()
                     put_to_prev(resp_ptr_prev);
                 }
             }
+        }
+        else {
+            assert(false);
         }
     }
     else 
