@@ -59,7 +59,7 @@ void cache::get_frm_prev()
     if (ifc_prev != nullptr)
     {
 
-        print();
+        // print();
 
         log.log(this, verbose::DEBUG, "Received request packet " + req_ptr_prev -> get_msg_str());
 
@@ -146,10 +146,13 @@ void cache::get_frm_prev()
             cache_line_states* inv_line_ptr = get_invalid_line(set_content);
 
             // Check victim cache
-
             // if victim cache exists and no space in set, check through victim cache
             if (_is_victim_cache_en && inv_line_ptr == nullptr)
             {
+                
+                // increment number of victim cache checks
+                hpm_counter_ptr->num_swap_req++;
+
                 bool is_victim_hit = false;
                 log.log(this, verbose::DEBUG, "Looking through victim cache");
                 for (auto victim_line = _v_victim_cache.begin(); victim_line != _v_victim_cache.end(); victim_line++)
@@ -169,7 +172,7 @@ void cache::get_frm_prev()
                             cache_line_states* lru_line = get_lru_line(set_content);
                             
                             // increment swap requests number
-                            hpm_counter_ptr->num_swap_req++;
+                            hpm_counter_ptr->num_swaps++;
 
                             swap_cache_line(req_set, lru_line, &*victim_line);
 
@@ -226,7 +229,7 @@ void cache::get_frm_prev()
 
                             // write request to next level
                             evict_req->req_op_type = OP_TYPE::STORE;
-                            evict_req->addr = ((victim_lru_line->_tag << _set_index_bit_size) | req_set) << _block_bit_size;
+                            evict_req->addr = victim_lru_line->_tag  << _block_bit_size;
 
                             put_to_next(evict_req);
 
@@ -267,16 +270,22 @@ void cache::get_frm_prev()
                     // request from next level
                     if (ifc_next != nullptr)
                     {
-                        req_ptr_next = req_ptr_prev;
+                        // push request to next elvel
+                        mem_req* miss_req = new mem_req;
+
+                        miss_req->req_op_type = OP_TYPE::LOAD;
+                        miss_req->addr = req_ptr_prev->addr;
+
+                        req_ptr_next = miss_req;
                         put_to_next(req_ptr_next);
+
+                        delete miss_req;
                     } else {
-                        log.log(this, verbose::FATAL, "No next level connection! Check connections");
+                        log.log(this, verbose::FATAL, "No next level connection! Check conncections");
                     }
                 }
             }
-            
-            // if victim cache is not enabled
-            if (!_is_victim_cache_en)
+            else
             {
                 // No victim cache
                 _repl_line = inv_line_ptr;
@@ -366,7 +375,6 @@ void cache::get_frm_next()
             log.log(this, verbose::DEBUG, "Replacing an LRU line");
 
             // get lru line from main cache
-            std::cout << "Replacing from set "  << resp_set << std::endl;
             cache_line_states* cache_lru_line = get_lru_line(_v_cache_states[resp_set]);
 
             if (_is_victim_cache_en)
@@ -515,7 +523,6 @@ cache_line_states* cache::get_lru_line(std::vector<cache_line_states>& set_conte
 
     for (auto line = set_content.begin(); line != set_content.end(); line++)
     {
-        std::cout << line->_count << std::endl;
         if (line->_count >= max_count && line->_valid) {
             lru_line_ptr = &*line;
             max_count = line->_count;
@@ -577,7 +584,7 @@ void cache::print()
             } else {
                 std::cout << "  ";
             }
-            std::cout << "  " << line._count << "  ";
+            // std::cout << "  " << line._count << "  ";
             std::cout << "  ";
         }
         std::cout << std::endl;
@@ -591,7 +598,7 @@ void cache::print()
         std::vector<cache_line_states> temp_set = _v_victim_cache;
         std::sort(temp_set.begin(), temp_set.end(), compare_lru_count);
         std::cout << " set 0:  ";
-        for (auto line : _v_victim_cache)
+        for (auto line : temp_set)
         {
             std::ios_base::fmtflags f(std::cout.flags());
             std::cout << std::hex << line._tag;
@@ -601,7 +608,7 @@ void cache::print()
             } else {
                 std::cout << "  ";
             }
-            std::cout << "  " << line._count << "  ";
+            // std::cout << "  " << line._count << "  ";
             std::cout << "  ";
         }
         std::cout << std::endl;
