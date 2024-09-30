@@ -23,7 +23,6 @@ namespace perf_counters
         unsigned num_swap_req;
         unsigned num_swaps;
         unsigned num_writebacks;
-        unsigned mem_traffic;
 
         cache_counters()
         {
@@ -34,8 +33,6 @@ namespace perf_counters
             write_misses = 0;
             num_swap_req = 0;
             num_writebacks = 0;
-            mem_traffic = 0;
-
             cache_ptr = nullptr;
         }
 

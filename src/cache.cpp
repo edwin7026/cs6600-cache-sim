@@ -125,7 +125,7 @@ void cache::get_frm_prev()
             }
             else
             {
-                // TODO
+                // TODO as part of optimization
             }
         }
 
@@ -222,6 +222,10 @@ void cache::get_frm_prev()
                         if (victim_lru_line->_dirty)
                         {
                             log.log(this, verbose::DEBUG, "Line is dirty. Evicting");
+
+                            // increment writeback counter
+                            hpm_counter_ptr->num_writebacks++;
+
                             _is_evict_on = true;
                             // write to next level
                             // create new request packet
@@ -301,6 +305,10 @@ void cache::get_frm_prev()
                     {
                         log.log(this, verbose::DEBUG, "Line is dirty. Evicting");
                         _is_evict_on = true;
+
+                        // incrementing writeback counter
+                        hpm_counter_ptr->num_writebacks++;
+
                         // write to next level
                         // create new request packet
                         mem_req* evict_req = new mem_req;

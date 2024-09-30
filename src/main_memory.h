@@ -16,6 +16,8 @@ class main_memory : public module
         unsigned _mem_acc_addr;
     public:
 
+        unsigned mem_access;
+
         /**
          * @details constructor that 
          */
@@ -23,6 +25,7 @@ class main_memory : public module
         {
             log.log(this, verbose::DEBUG, "Constructing Main Memory");
             mk_next_connection(nullptr);
+            mem_access = 0;
         }
 
         /**
@@ -32,6 +35,8 @@ class main_memory : public module
         {
             if (ifc_prev != nullptr)
             {
+                // increment counter for memory accessses
+                mem_access = mem_access + 1;
                 
                 log.log(this, verbose::DEBUG, "Received request packet " +  req_ptr_prev -> get_msg_str());
 
