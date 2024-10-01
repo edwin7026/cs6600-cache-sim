@@ -52,14 +52,14 @@ cache::cache(const std::string& name, const unsigned& size, const unsigned& asso
     log.log(this, verbose::DEBUG, "Constructed " + name + " Cache");
 }
 
+bool compare_lru_count(cache_line_states, cache_line_states);
+
 // generic interface functions
 
 void cache::get_frm_prev()
 {
     if (ifc_prev != nullptr)
     {
-
-        // print();
 
         log.log(this, verbose::DEBUG, "Received request packet " + req_ptr_prev -> get_msg_str());
 
@@ -178,6 +178,11 @@ void cache::get_frm_prev()
 
                             // exchange count values
                             std::swap(victim_line->_count, lru_line->_count);
+
+                            // set dirty if incoming request is a store
+                            if (req_ptr_prev->req_op_type == OP_TYPE::STORE) {
+                                lru_line->_dirty = true;
+                            }
                             
                             // Update LRU counters on hit in victim cache
                             lru_hit_update(&_v_victim_cache, *victim_line);
@@ -400,7 +405,7 @@ void cache::get_frm_next()
                 lru_repl_update(&_v_victim_cache, *_repl_line);
 
                 // finally update the lru line with response
-                cache_lru_line ->_dirty = (bool) req_ptr_prev -> req_op_type;
+                cache_lru_line ->_dirty = req_ptr_prev -> req_op_type == OP_TYPE::STORE ? true : false; 
                 cache_lru_line -> _tag = get_cache_tag(req_ptr_prev -> addr);
                 cache_lru_line -> _valid = true;
                 cache_lru_line -> _count = 0;
@@ -418,7 +423,7 @@ void cache::get_frm_next()
             {
                 log.log(this, verbose::DEBUG, "Filling evicted line with new content");
 
-                _repl_line -> _dirty = (bool) req_ptr_prev -> req_op_type;
+                _repl_line -> _dirty = req_ptr_prev -> req_op_type == OP_TYPE::STORE ? true : false; 
                 _repl_line -> _tag = get_cache_tag(req_ptr_prev -> addr);
                 _repl_line -> _valid = true;
                 _repl_line -> _count = 0;
@@ -490,7 +495,7 @@ void cache::lru_repl_update(std::vector<cache_line_states>* set_content, cache_l
     {
         if (other_line._tag != hit_line._tag && other_line._valid)
         {
-            if (other_line._count != set_content->size()) {
+            if (other_line._count != set_content->size() - 1) {
                 other_line._count = other_line._count + 1;
             }
         }
@@ -592,7 +597,7 @@ void cache::print()
             } else {
                 std::cout << "  ";
             }
-            // std::cout << "  " << line._count << "  ";
+            std::cout << "  " << line._count << "  ";
             std::cout << "  ";
         }
         std::cout << std::endl;
@@ -616,7 +621,7 @@ void cache::print()
             } else {
                 std::cout << "  ";
             }
-            // std::cout << "  " << line._count << "  ";
+            std::cout << "  " << line._count << "  ";
             std::cout << "  ";
         }
         std::cout << std::endl;

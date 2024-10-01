@@ -28,15 +28,16 @@ void cpu::sequencer()
     std::string opr;
 
     // line counter
-    unsigned count = 0;
+    unsigned count = 1;
 
     // error flag
     bool err = false;
 
     if (stream.is_open())
-    {
+    {   
         while (getline(stream, line))
         {
+            
             mem_req* req_msg = new mem_req;
 
             log.log(this, verbose::DEBUG, "Reading line: " + line);
