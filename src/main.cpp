@@ -213,14 +213,14 @@ int main(int argc, char* argv[])
     double mem_miss_penalty = 20.0f + l1_cache_block_size / 16.0f;
     double l1_miss_penalty = 0.0f;
 
-    // if only l1-mem
-    average_acc_time = l1_avg_access_time + l1_vc_miss_rate * l1_miss_penalty;
+    double l1_miss_penalty_num = 0.0f;
+
 
     // get l1 mis penalty
     if (l2_cache_size == 0) {
         l1_miss_penalty = mem_miss_penalty;
     } else {
-        l1_miss_penalty = l2_avg_access_time + l2_miss_rate * mem_miss_penalty;
+        l1_miss_penalty = l2_avg_access_time + l2_miss_rate * static_cast<double>(mem_miss_penalty);
     }
 
     // get total area
@@ -230,25 +230,32 @@ int main(int argc, char* argv[])
     average_acc_time = l1_avg_access_time + l1_vc_miss_rate * l1_miss_penalty + l1_swap_request_rate * l1_vc_avg_access_time;
     
     // total access time
-    total_acc_time = static_cast<double>(l1_avg_access_time) + (hpm_counters_l1.read_misses + hpm_counters_l1.write_misses - hpm_counters_l1.num_swaps) * static_cast<double>(l1_miss_penalty) \
-                            + hpm_counters_l1.num_swap_req * static_cast<double>(l1_vc_avg_access_time);
+    if (l2_cache_size == 0) {
+        l1_miss_penalty_num = (hpm_counters_l1.read_misses + hpm_counters_l1.write_misses) * mem_miss_penalty;
+    } else {
+        l1_miss_penalty_num = static_cast<double>(l2_avg_access_time) * (hpm_counters_l2.num_reads + hpm_counters_l2.num_writes) + (hpm_counters_l2.read_misses + hpm_counters_l2.write_misses) * mem_miss_penalty;
+    }
+    total_acc_time = static_cast<double>(l1_avg_access_time) * (hpm_counters_l1.num_reads + hpm_counters_l1.num_writes) + \
+                     static_cast<double>(l1_miss_penalty_num) + \
+                    (hpm_counters_l1.num_swaps) * static_cast<double>(l1_vc_avg_access_time);
 
+    // energy delay product
     e_delay_prod = (hpm_counters_l1.num_reads + hpm_counters_l1.num_writes + hpm_counters_l1.read_misses + hpm_counters_l1.write_misses) * static_cast<double>(l1_energy);
     if (l1_cache_num_victim_blocks != 0)
         e_delay_prod += (2*hpm_counters_l1.num_swaps) * static_cast<double>(l1_vc_energy);
     if (l2_cache_size != 0) {
-        e_delay_prod += (hpm_counters_l2.read_misses + hpm_counters_l2.write_misses + hpm_counters_l2.num_reads + hpm_counters_l2.num_reads) * static_cast<double>(l2_energy);
+        e_delay_prod += (hpm_counters_l2.read_misses + hpm_counters_l2.write_misses + hpm_counters_l2.num_reads + hpm_counters_l2.num_writes) * static_cast<double>(l2_energy);
         e_delay_prod += (hpm_counters_l2.read_misses + hpm_counters_l2.write_misses + hpm_counters_l2.num_writebacks) * static_cast<double>(mem_energy);
     } else {
         e_delay_prod += (hpm_counters_l1.read_misses + hpm_counters_l1.write_misses - hpm_counters_l1.num_swaps + hpm_counters_l1.num_writebacks) * static_cast<double>(mem_energy);
     }
-    e_delay_prod = e_delay_prod * total_acc_time * (hpm_counters_l1.num_reads + hpm_counters_l1.num_writes);
+    e_delay_prod = e_delay_prod * total_acc_time;
 
     // print
     std::cout << std::endl << "===== Simulation results (performance) =====" << std::endl;
     std::cout << " 1. average access time:\t" << std::setprecision(5) << average_acc_time << std::endl;
     std::cout << " 2. energy-delay product:\t" << std::setprecision(14) <<  e_delay_prod << std::endl;
-    std::cout << " 3. total area:\t" << std::setprecision(4) << total_area << std::endl;
+    std::cout << " 3. total area:\t" << std::setprecision(3) << total_area << std::endl;
         
     return 0;
 }
